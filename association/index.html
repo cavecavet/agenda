@@ -139,20 +139,25 @@
             border-left: 4px solid var(--accent-teal);
         }
         .slots-grid {
-            padding: 0.6rem;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-            gap: 0.5rem;
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
         }
 
         /* ---- SLOT CARD ---- */
         .slot-card {
-            border: 1.5px solid var(--gray-200);
-            border-radius: 8px;
-            padding: 0.6rem 0.7rem;
+            border: 1.5px solid #e4eff5;
+            border-radius: 10px;
+            padding: 0.6rem 0.75rem;
             cursor: pointer;
             transition: all 0.15s;
             user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            background: white;
+            box-shadow: 0 2px 6px rgba(0,101,128,0.06);
         }
         .slot-card:hover:not(.full) {
             border-color: var(--primary);
@@ -160,63 +165,77 @@
             transform: translateY(-1px);
         }
         .slot-card.full {
-            opacity: 0.55;
+            opacity: 0.5;
             cursor: default;
             background: var(--gray-50);
         }
         .slot-card.mine {
             border-color: var(--accent-teal);
-            background: #e8f7f3;
-            box-shadow: 0 2px 8px rgba(6, 167, 125, 0.15);
+            background: linear-gradient(135deg, #f0fdf8 0%, #e8f7f3 100%);
+            box-shadow: 0 2px 8px rgba(6, 167, 125, 0.12);
+        }
+        .slot-time-col {
+            text-align: center;
+            min-width: 44px;
+            flex-shrink: 0;
         }
         .slot-time {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--gray-800);
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #0077a8;
+            line-height: 1;
+        }
+        .slot-dur {
+            font-size: 0.58rem;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
+        .slot-divider {
+            width: 1px;
+            background: #e4eff5;
+            height: 30px;
+            flex-shrink: 0;
+        }
+        .slot-info {
+            flex: 1;
+            min-width: 0;
         }
         .slot-activity {
-            font-size: 0.72rem;
-            color: var(--gray-600);
-            margin-top: 0.1rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--gray-800);
         }
         .slot-bar-row {
             display: flex;
             align-items: center;
             gap: 0.3rem;
-            margin-top: 0.4rem;
+            margin-top: 0.3rem;
         }
         .bar-track {
             flex: 1;
-            height: 4px;
+            height: 5px;
             background: var(--gray-200);
-            border-radius: 2px;
+            border-radius: 3px;
             overflow: hidden;
         }
         .bar-fill {
             height: 100%;
-            border-radius: 2px;
+            border-radius: 3px;
             transition: width 0.3s;
             background: var(--primary);
         }
         .bar-fill.warn  { background: var(--warning); }
         .bar-fill.full  { background: var(--danger); }
         .bar-count {
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             color: var(--gray-600);
             white-space: nowrap;
         }
         .bar-count.full-count { color: var(--danger); font-weight: 600; }
-        .slot-names {
-            font-size: 0.68rem;
-            color: var(--gray-600);
-            margin-top: 0.3rem;
-            line-height: 1.4;
-            word-break: break-word;
-        }
         .slot-mine-badge {
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             color: var(--success);
-            font-weight: 600;
+            font-weight: 700;
             margin-top: 0.2rem;
         }
 
@@ -792,6 +811,13 @@ function renderWeek(mon) {
     cont.innerHTML = html;
 }
 
+function fmtDuration(ini, fi) {
+    const [h1, m1] = ini.split(':').map(Number);
+    const [h2, m2] = fi.split(':').map(Number);
+    const mins = (h2 * 60 + m2) - (h1 * 60 + m1);
+    return mins >= 60 ? `${Math.floor(mins/60)}h${mins%60 ? (mins%60)+'m' : ''}` : `${mins}m`;
+}
+
 function slotCard(s) {
     const ins  = s.inscripciones || [];
     const cnt  = ins.length;
@@ -800,19 +826,25 @@ function slotCard(s) {
     const fill = pct >= 100 ? 'full' : pct >= 75 ? 'warn' : '';
     const myName = (localStorage.getItem('myName') || '').trim().toLowerCase();
     const isMine = myName && ins.some(e => e.nombre.trim().toLowerCase() === myName);
-    const names  = ins.map(e => e.nombre).join(', ');
+    const timeColor = cnt >= max ? 'color:var(--danger)' : '';
+    const dur = fmtDuration(s.hora_inicio, s.hora_fin);
 
     return `
     <div class="slot-card ${cnt >= max && !isMine ? 'full' : ''} ${isMine ? 'mine' : ''}"
          onclick="openSlot('${s.id}')">
-        <div class="slot-time">${s.hora_inicio.slice(0,5)}–${s.hora_fin.slice(0,5)}</div>
-        <div class="slot-activity">${s.actividad}</div>
-        <div class="slot-bar-row">
-            <div class="bar-track"><div class="bar-fill ${fill}" style="width:${pct}%"></div></div>
-            <span class="bar-count ${cnt >= max ? 'full-count' : ''}">${cnt}/${max}</span>
+        <div class="slot-time-col">
+            <div class="slot-time" style="${timeColor}">${s.hora_inicio.slice(0,5)}</div>
+            <div class="slot-dur">${dur}</div>
         </div>
-        ${names ? `<div class="slot-names">${names}</div>` : ''}
-        ${isMine ? '<div class="slot-mine-badge">✓ Apuntat/ada</div>' : ''}
+        <div class="slot-divider"></div>
+        <div class="slot-info">
+            <div class="slot-activity">${s.actividad}</div>
+            <div class="slot-bar-row">
+                <div class="bar-track"><div class="bar-fill ${fill}" style="width:${pct}%"></div></div>
+                <span class="bar-count ${cnt >= max ? 'full-count' : ''}">${cnt}/${max}</span>
+            </div>
+            ${isMine ? '<div class="slot-mine-badge">✓ Apuntat/ada</div>' : ''}
+        </div>
     </div>`;
 }
 
