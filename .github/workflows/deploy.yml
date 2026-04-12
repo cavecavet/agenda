@@ -38,6 +38,10 @@ jobs:
           sed -i "s|TU_NUMERO|$CALLMEBOT_PHONE|g" association/index.html
           sed -i "s|TU_APIKEY_CALLMEBOT|$CALLMEBOT_API_KEY|g" association/index.html
           sed -i "s|cambia_esta_clave|$ADMIN_PASSWORD|g" association/index.html
+          echo "--- Verificació ---"
+          grep -q "TU_SUPABASE_URL" association/index.html && echo "ERROR: SUPABASE_URL no substituïda" || echo "OK: SUPABASE_URL substituïda"
+          grep -q "TU_SUPABASE_ANON_KEY" association/index.html && echo "ERROR: SUPABASE_KEY no substituïda" || echo "OK: SUPABASE_KEY substituïda"
+          grep -q "cambia_esta_clave" association/index.html && echo "ERROR: ADMIN_PASSWORD no substituïda" || echo "OK: ADMIN_PASSWORD substituïda"
 
       - name: Upload artifacts
         uses: actions/upload-pages-artifact@v3
