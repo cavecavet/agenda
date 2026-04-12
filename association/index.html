@@ -55,34 +55,34 @@
 
         /* ---- HEADER ---- */
         header {
-            background: linear-gradient(135deg, #00b4d8 0%, #0096c7 50%, #06a77d 100%);
+            background: linear-gradient(160deg, #0077a8 0%, #0096c7 45%, #05967d 100%);
             color: white;
-            padding: 1.5rem 1.5rem;
+            padding: 1rem 1.25rem 2.4rem;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 101, 128, 0.2);
+            align-items: flex-start;
             position: relative;
             overflow: hidden;
         }
-        
-        header::before {
-            content: '🌊';
+        .header-title { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; }
+        .header-sub   { font-size: 0.72rem; opacity: 0.8; margin-top: 0.15rem; font-style: normal; letter-spacing: normal; }
+        .header-badge {
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.28);
+            border-radius: 20px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.62rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .header-wave {
             position: absolute;
-            top: -10px;
-            right: -20px;
-            font-size: 4rem;
-            opacity: 0.1;
-            animation: float 4s ease-in-out infinite;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 28px;
+            pointer-events: none;
         }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-15px); }
-        }
-        .header-title { font-size: 1.2rem; font-weight: 700; }
-        .header-sub   { font-size: 0.75rem; opacity: 0.85; margin-top: 0.1rem; }
-        .header-icon  { font-size: 2rem; }
 
         /* ---- WEEK NAV ---- */
         .week-nav {
@@ -533,9 +533,12 @@ const CONFIG = {
 <header>
     <div>
         <div class="header-title" id="hTitle">Agenda Comunitaria</div>
-        <div class="header-sub"  id="hSub">🌊 Activitats · Franges horàries 🌊</div>
+        <div class="header-sub">Activitats · Franges horàries</div>
     </div>
-    <div class="header-icon">🐚</div>
+    <div class="header-badge" id="headerBadge"></div>
+    <svg class="header-wave" viewBox="0 0 400 28" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,14 C60,28 120,0 180,14 C240,28 300,0 360,14 C380,19 392,22 400,22 L400,28 L0,28 Z" fill="white"/>
+    </svg>
 </header>
 
 <!-- ═══ WEEK NAV ═══ -->
@@ -691,6 +694,9 @@ let currentSlotId = null;
 // ── Init ─────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('hTitle').textContent = CONFIG.nombreAsociacion;
+    const M = ['Gen','Feb','Mar','Abr','Mai','Jun','Jul','Ago','Set','Oct','Nov','Des'];
+    const now = new Date();
+    document.getElementById('headerBadge').textContent = `${M[now.getMonth()]} ${now.getFullYear()}`;
 
     if (CONFIG.supabaseUrl === 'TU_SUPABASE_URL') {
         document.getElementById('mainContent').innerHTML = `
