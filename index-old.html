@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Comunitaria</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-dark: #0284c7;
+            --primary-light: #e0f2fe;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+            min-height: 100vh;
+        }
+
+        /* ---- HEADER ---- */
+        header {
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+        }
+        .header-title { font-size: 1.2rem; font-weight: 700; }
+        .header-sub   { font-size: 0.75rem; opacity: 0.85; margin-top: 0.1rem; }
+        .header-icon  { font-size: 2rem; }
+
+        /* ---- WEEK NAV ---- */
+        .week-nav {
+            background: white;
+            padding: 0.65rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--gray-200);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .week-nav button {
+            background: none;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            padding: 0.35rem 0.7rem;
+            cursor: pointer;
+            color: var(--gray-600);
+            font-size: 0.85rem;
+            transition: background 0.15s;
+        }
+        .week-nav button:hover { background: var(--gray-100); }
+        .week-label { font-weight: 600; font-size: 0.9rem; color: var(--gray-700); }
+
+        /* ---- MAIN ---- */
+        main {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* ---- DAY SECTION ---- */
+        .day-section {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 0.85rem;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .day-header {
+            background: var(--gray-100);
+            padding: 0.55rem 1rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            text-transform: capitalize;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        .day-header.today {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+        .slots-grid {
+            padding: 0.6rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+            gap: 0.5rem;
+        }
+
+        /* ---- SLOT CARD ---- */
+        .slot-card {
+            border: 1.5px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 0.6rem 0.7rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+        }
+        .slot-card:hover:not(.full) {
+            border-color: var(--primary);
+            box-shadow: 0 2px 10px rgba(14,165,233,0.15);
+            transform: translateY(-1px);
+        }
+        .slot-card.full {
+            opacity: 0.55;
+            cursor: default;
+            background: var(--gray-50);
+        }
+        .slot-card.mine {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+        .slot-time {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+        .slot-activity {
+            font-size: 0.72rem;
+            color: var(--gray-600);
+            margin-top: 0.1rem;
+        }
+        .slot-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-top: 0.4rem;
+        }
+        .bar-track {
+            flex: 1;
+            height: 4px;
+            background: var(--gray-200);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s;
+            background: var(--primary);
+        }
+        .bar-fill.warn  { background: var(--warning); }
+        .bar-fill.full  { background: var(--danger); }
+        .bar-count {
+            font-size: 0.72rem;
+            color: var(--gray-600);
+            white-space: nowrap;
+        }
+        .bar-count.full-count { color: var(--danger); font-weight: 600; }
+        .slot-names {
+            font-size: 0.68rem;
+            color: var(--gray-600);
+            margin-top: 0.3rem;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .slot-mine-badge {
+            font-size: 0.68rem;
+            color: var(--success);
+            font-weight: 600;
+            margin-top: 0.2rem;
+        }
+
+        /* ---- MODAL OVERLAY ---- */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.48);
+            z-index: 200;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        .overlay.open { display: flex; }
+        @media (min-width: 600px) {
+            .overlay { align-items: center; }
+            .modal { border-radius: 16px !important; }
+        }
+
+        /* ---- MODAL ---- */
+        .modal {
+            background: white;
+            border-radius: 18px 18px 0 0;
+            padding: 1.4rem;
+            width: 100%;
+            max-width: 480px;
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+        .modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.2rem;
+        }
+        .modal-title { font-size: 1.05rem; font-weight: 700; }
+        .modal-sub   { font-size: 0.82rem; color: var(--gray-600); margin-bottom: 1.1rem; }
+        .close-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--gray-400);
+            line-height: 1;
+            padding: 0.1rem;
+        }
+
+        /* ---- ENROLLED LIST ---- */
+        .enrolled-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--gray-500);
+            margin-bottom: 0.4rem;
+        }
+        .enrolled-list { list-style: none; margin-bottom: 0.75rem; }
+        .enrolled-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 0.875rem;
+        }
+        .enrolled-list li:last-child { border-bottom: none; }
+        .avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.72rem; font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        hr.divider { border: none; border-top: 1px solid var(--gray-200); margin: 1rem 0; }
+
+        /* ---- FORM ---- */
+        .form-group { margin-bottom: 0.85rem; }
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 0.3rem;
+        }
+        .form-input {
+            width: 100%;
+            border: 1.5px solid var(--gray-300);
+            border-radius: 8px;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(14,165,233,0.12);
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+
+        /* ---- BUTTONS ---- */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
+            padding: 0.65rem 1.1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .btn-full { width: 100%; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+        .btn-danger  { background: #fee2e2; color: var(--danger); }
+        .btn-danger:hover:not(:disabled)  { background: #fecaca; }
+        .btn-secondary { background: var(--gray-100); color: var(--gray-700); }
+        .btn-secondary:hover:not(:disabled) { background: var(--gray-200); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-row { display: flex; gap: 0.5rem; }
+
+        /* ---- ALERT ---- */
+        .alert {
+            padding: 0.65rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+        .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+        /* ---- STATES ---- */
+        .loading, .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: var(--gray-400);
+            font-size: 0.9rem;
+        }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+        /* ---- CONFIG WARNING ---- */
+        .config-warn {
+            background: #fffbeb;
+            border: 2px dashed #fbbf24;
+            border-radius: 10px;
+            padding: 1.1rem 1.25rem;
+            margin: 1rem;
+            font-size: 0.85rem;
+            color: #92400e;
+            line-height: 1.6;
+        }
+        .config-warn code {
+            background: #fef3c7;
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+        }
+        .config-warn a { color: #b45309; }
+
+        /* ---- ADMIN FAB ---- */
+        .fab-admin {
+            position: fixed;
+            bottom: 1.5rem; right: 1.5rem;
+            background: var(--gray-800);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 0.65rem 1.2rem;
+            font-size: 0.83rem;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+            z-index: 50;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+        .fab-admin:hover { background: var(--gray-700); }
+
+        /* ---- CHECKBOX ---- */
+        .check-label {
+            display: flex; align-items: center; gap: 0.4rem;
+            font-size: 0.85rem; cursor: pointer; color: var(--gray-700);
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     CONFIGURACIÓN — edita estos valores antes de subir
+     ═══════════════════════════════════════════════ -->
+<script>
+const CONFIG = {
+    // ① Supabase → obtén estos valores en supabase.com > tu proyecto > Settings > API
+    supabaseUrl:  'TU_SUPABASE_URL',          // ej: https://abcxyz.supabase.co
+    supabaseKey:  'TU_SUPABASE_ANON_KEY',     // clave "anon public"
+
+    // ② CallMeBot (WhatsApp) → ver guía SETUP.md
+    callmebotPhone:  'TU_NUMERO',             // ej: 34612345678  (sin + ni espacios)
+    callmebotApiKey: 'TU_APIKEY_CALLMEBOT',
+
+    // ③ General
+    nombreAsociacion: 'Cave Cavet',
+    actividadDefault: 'Natació 🏊',
+    adminPassword:    'cambia_esta_clave',     // ← ¡cámbiala!
+};
+</script>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+    <div>
+        <div class="header-title" id="hTitle">Agenda Comunitaria</div>
+        <div class="header-sub"  id="hSub">Activitats · Franges horàries</div>
+    </div>
+    <div class="header-icon">🏊</div>
+</header>
+
+<!-- ═══ WEEK NAV ═══ -->
+<div class="week-nav">
+    <button onclick="changeWeek(-1)">← Anterior</button>
+    <span class="week-label" id="weekLabel"></span>
+    <button onclick="changeWeek(1)">Següent →</button>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<main id="mainContent">
+    <div class="loading">Carregant…</div>
+</main>
+
+<!-- ═══ FAB ADMIN ═══ -->
+<button class="fab-admin" onclick="openAdmin()">⚙️ Admin</button>
+
+<!-- ════════════════════════════════════════
+     MODAL: INSCRIPCIÓ
+     ════════════════════════════════════════ -->
+<div class="overlay" id="signupOverlay">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-title" id="mTitle"></div>
+            <button class="close-btn" onclick="closeOverlay('signupOverlay')">✕</button>
+        </div>
+        <div class="modal-sub" id="mSub"></div>
+
+        <!-- Llista d'apuntats -->
+        <div class="enrolled-title">Apuntats</div>
+        <ul class="enrolled-list" id="enrolledList"></ul>
+
+        <hr class="divider">
+
+        <!-- Alert -->
+        <div id="signupAlert"></div>
+
+        <!-- Formulari inscripció -->
+        <div id="signupForm">
+            <div class="form-group">
+                <label class="form-label" for="nameInput">El teu nom</label>
+                <input type="text" class="form-input" id="nameInput"
+                       placeholder="Escriu el teu nom complet" autocomplete="name">
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-primary btn-full" id="signupBtn" onclick="doSignup()">✓ Apuntar-me</button>
+                <button class="btn btn-secondary" onclick="closeOverlay('signupOverlay')">Cancel·la</button>
+            </div>
+        </div>
+
+        <!-- Ja apuntat -->
+        <div id="alreadySection" style="display:none">
+            <div class="alert alert-success">✓ Ja estàs apuntat/ada a aquesta franja</div>
+            <button class="btn btn-danger btn-full" onclick="doUnsignup()">✕ Esborrar-me d'aquesta franja</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     MODAL: ADMIN
+     ════════════════════════════════════════ -->
+<div class="overlay" id="adminOverlay">
+    <div class="modal">
+        <div class="modal-head" style="margin-bottom:1.1rem">
+            <div class="modal-title">⚙️ Panell Admin</div>
+            <button class="close-btn" onclick="closeOverlay('adminOverlay')">✕</button>
+        </div>
+
+        <!-- Login -->
+        <div id="adminLogin">
+            <div class="form-group">
+                <label class="form-label">Contrasenya</label>
+                <input type="password" class="form-input" id="adminPwd"
+                       placeholder="Contrasenya admin"
+                       onkeypress="if(event.key==='Enter') checkAdminPwd()">
+            </div>
+            <button class="btn btn-primary btn-full" onclick="checkAdminPwd()">Entrar</button>
+            <div id="adminLoginErr" style="color:var(--danger);font-size:0.8rem;margin-top:0.4rem"></div>
+        </div>
+
+        <!-- Panel -->
+        <div id="adminPanel" style="display:none">
+            <div id="adminAlert"></div>
+
+            <!-- Crear franges -->
+            <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-500);margin-bottom:0.6rem">
+                Crear franges horàries
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Des de data</label>
+                    <input type="date" class="form-input" id="aDateFrom">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fins a data</label>
+                    <input type="date" class="form-input" id="aDateTo">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Hora inici</label>
+                    <input type="time" class="form-input" id="aTimeFrom" value="09:00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Hora fi</label>
+                    <input type="time" class="form-input" id="aTimeTo" value="13:00">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Activitat</label>
+                    <input type="text" class="form-input" id="aActivity">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Places per franja</label>
+                    <input type="number" class="form-input" id="aCapacity" value="8" min="1" max="100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="check-label">
+                    <input type="checkbox" id="aNoSunday" checked>
+                    No incloure diumenges
+                </label>
+            </div>
+            <button class="btn btn-primary btn-full" id="createBtn" onclick="createSlots()">Crear franges</button>
+
+            <hr class="divider">
+
+            <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-500);margin-bottom:0.5rem">
+                Eliminar franges
+            </div>
+            <div style="font-size:0.8rem;color:var(--gray-600);margin-bottom:0.65rem">
+                Elimina totes les franges de la setmana visible (i les seves inscripcions).
+            </div>
+            <button class="btn btn-danger btn-full" onclick="deleteWeekSlots()">
+                🗑 Eliminar franges d'aquesta setmana
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════ -->
+<script>
+// ── Estado ──────────────────────────────────────
+let sb;           // supabase client
+let weekOffset = 0;
+let slots = [];
+let currentSlotId = null;
+
+// ── Init ─────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+    document.getElementById('hTitle').textContent = CONFIG.nombreAsociacion;
+
+    if (CONFIG.supabaseUrl === 'TU_SUPABASE_URL') {
+        document.getElementById('mainContent').innerHTML = `
+            <div class="config-warn">
+                <strong>⚠️ Aplicació no configurada</strong><br><br>
+                Edita el fitxer <code>index.html</code> i omple els valors a la secció <code>CONFIG</code> al principi del codi:<br><br>
+                • <code>supabaseUrl</code> + <code>supabaseKey</code> → <a href="https://supabase.com" target="_blank">supabase.com</a> › Settings › API<br>
+                • <code>callmebotPhone</code> + <code>callmebotApiKey</code> → <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank">callmebot.com</a><br>
+                • <code>adminPassword</code> → tria una contrasenya per al panell admin<br><br>
+                Consulta el fitxer <strong>SETUP.md</strong> per a les instruccions detallades.
+            </div>`;
+        return;
+    }
+
+    sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+
+    // Defaults admin form
+    const mon = getMonday(new Date());
+    const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+    document.getElementById('aDateFrom').value = iso(mon);
+    document.getElementById('aDateTo').value   = iso(sun);
+    document.getElementById('aActivity').value = CONFIG.actividadDefault;
+
+    await loadWeek();
+});
+
+// ── Semana ───────────────────────────────────────
+function getMonday(d) {
+    const r = new Date(d);
+    const day = r.getDay();
+    r.setDate(r.getDate() - day + (day === 0 ? -6 : 1));
+    r.setHours(0,0,0,0);
+    return r;
+}
+function iso(d) { return d.toISOString().split('T')[0]; }
+
+function fmtDate(str) {
+    const D = ['diumenge','dilluns','dimarts','dimecres','dijous','divendres','dissabte'];
+    const M = ['gener','febrer','març','abril','maig','juny','juliol','agost','setembre','octubre','novembre','desembre'];
+    const d = new Date(str + 'T00:00:00');
+    return `${D[d.getDay()]} ${d.getDate()} de ${M[d.getMonth()]}`;
+}
+function fmtDateShort(str) {
+    const M = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
+    const d = new Date(str + 'T00:00:00');
+    return `${d.getDate()} ${M[d.getMonth()]}`;
+}
+
+function changeWeek(delta) { weekOffset += delta; loadWeek(); }
+
+async function loadWeek() {
+    const mon = getMonday(new Date());
+    mon.setDate(mon.getDate() + weekOffset * 7);
+    const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+
+    const M = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
+    const m1 = mon.getDate() + ' ' + M[mon.getMonth()];
+    const m2 = sun.getDate() + ' ' + M[sun.getMonth()] + ' ' + sun.getFullYear();
+    document.getElementById('weekLabel').textContent = `${m1} – ${m2}`;
+
+    document.getElementById('mainContent').innerHTML = '<div class="loading">Carregant franges…</div>';
+
+    const { data, error } = await sb
+        .from('franjas')
+        .select('*, inscripciones(id, nombre, created_at)')
+        .gte('fecha', iso(mon))
+        .lte('fecha', iso(sun))
+        .order('fecha')
+        .order('hora_inicio');
+
+    if (error) {
+        document.getElementById('mainContent').innerHTML = `
+            <div class="config-warn">Error carregant dades: ${error.message}<br>
+            Comprova la configuració de Supabase i les polítiques RLS.</div>`;
+        return;
+    }
+
+    slots = data || [];
+    renderWeek(mon);
+}
+
+function renderWeek(mon) {
+    const today = iso(new Date());
+    const cont  = document.getElementById('mainContent');
+
+    if (!slots.length) {
+        cont.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">📅</div>
+                <div style="font-weight:600;margin-bottom:0.25rem">No hi ha franges aquesta setmana</div>
+                <div>Usa el panell Admin per crear les franges horàries</div>
+            </div>`;
+        return;
+    }
+
+    const byDate = {};
+    slots.forEach(s => { (byDate[s.fecha] = byDate[s.fecha] || []).push(s); });
+
+    let html = '';
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(mon); d.setDate(d.getDate() + i);
+        const ds = iso(d);
+        const daySlots = byDate[ds];
+        if (!daySlots) continue;
+
+        const isToday = ds === today;
+        html += `
+        <div class="day-section">
+            <div class="day-header ${isToday ? 'today' : ''}">
+                ${isToday ? '📍 ' : ''}${fmtDate(ds)}
+            </div>
+            <div class="slots-grid">
+                ${daySlots.map(slotCard).join('')}
+            </div>
+        </div>`;
+    }
+    cont.innerHTML = html;
+}
+
+function slotCard(s) {
+    const ins  = s.inscripciones || [];
+    const cnt  = ins.length;
+    const max  = s.plazas_max;
+    const pct  = Math.min(100, Math.round(cnt / max * 100));
+    const fill = pct >= 100 ? 'full' : pct >= 75 ? 'warn' : '';
+    const myName = (localStorage.getItem('myName') || '').trim().toLowerCase();
+    const isMine = myName && ins.some(e => e.nombre.trim().toLowerCase() === myName);
+    const names  = ins.map(e => e.nombre).join(', ');
+
+    return `
+    <div class="slot-card ${cnt >= max && !isMine ? 'full' : ''} ${isMine ? 'mine' : ''}"
+         onclick="openSlot('${s.id}')">
+        <div class="slot-time">${s.hora_inicio.slice(0,5)}–${s.hora_fin.slice(0,5)}</div>
+        <div class="slot-activity">${s.actividad}</div>
+        <div class="slot-bar-row">
+            <div class="bar-track"><div class="bar-fill ${fill}" style="width:${pct}%"></div></div>
+            <span class="bar-count ${cnt >= max ? 'full-count' : ''}">${cnt}/${max}</span>
+        </div>
+        ${names ? `<div class="slot-names">${names}</div>` : ''}
+        ${isMine ? '<div class="slot-mine-badge">✓ Apuntat/ada</div>' : ''}
+    </div>`;
+}
+
+// ── Modal inscripció ──────────────────────────────
+function openSlot(id) {
+    const s = slots.find(x => x.id === id);
+    if (!s) return;
+    currentSlotId = id;
+
+    const ins  = s.inscripciones || [];
+    const cnt  = ins.length;
+    const max  = s.plazas_max;
+    const full = cnt >= max;
+
+    document.getElementById('mTitle').textContent =
+        `${s.hora_inicio.slice(0,5)}–${s.hora_fin.slice(0,5)}  ·  ${s.actividad}`;
+    document.getElementById('mSub').textContent =
+        `${fmtDate(s.fecha)}  ·  ${cnt} de ${max} places ocupades`;
+
+    // Llista apuntats
+    const ul = document.getElementById('enrolledList');
+    ul.innerHTML = ins.length
+        ? ins.map(e => `<li><div class="avatar">${e.nombre.charAt(0).toUpperCase()}</div>${e.nombre}</li>`).join('')
+        : '<li style="color:var(--gray-400)">Ningú apuntat encara</li>';
+
+    // Estat usuari
+    const myName = (localStorage.getItem('myName') || '').trim().toLowerCase();
+    const isMine = myName && ins.some(e => e.nombre.trim().toLowerCase() === myName);
+
+    document.getElementById('signupAlert').innerHTML = '';
+
+    if (isMine) {
+        document.getElementById('signupForm').style.display    = 'none';
+        document.getElementById('alreadySection').style.display = 'block';
+    } else {
+        document.getElementById('signupForm').style.display    = 'block';
+        document.getElementById('alreadySection').style.display = 'none';
+        const savedName = localStorage.getItem('myName') || '';
+        if (savedName) document.getElementById('nameInput').value = savedName;
+        const btn = document.getElementById('signupBtn');
+        btn.disabled    = full;
+        btn.textContent = full ? 'Franja plena' : '✓ Apuntar-me';
+    }
+
+    document.getElementById('signupOverlay').classList.add('open');
+    if (!isMine) setTimeout(() => document.getElementById('nameInput').focus(), 100);
+}
+
+async function doSignup() {
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) { showAlert('signupAlert', 'Escriu el teu nom', 'error'); return; }
+
+    const btn = document.getElementById('signupBtn');
+    btn.disabled = true; btn.textContent = 'Apuntant…';
+
+    const s   = slots.find(x => x.id === currentSlotId);
+    const cnt = (s.inscripciones || []).length;
+    if (cnt >= s.plazas_max) {
+        showAlert('signupAlert', 'Aquesta franja ja és plena', 'error');
+        btn.disabled = false; btn.textContent = '✓ Apuntar-me';
+        return;
+    }
+
+    const { error } = await sb.from('inscripciones')
+        .insert({ franja_id: currentSlotId, nombre: name });
+
+    if (error) {
+        showAlert('signupAlert', 'Error: ' + error.message, 'error');
+        btn.disabled = false; btn.textContent = '✓ Apuntar-me';
+        return;
+    }
+
+    localStorage.setItem('myName', name);
+    notifyWhatsApp(name, s);
+
+    await loadWeek();
+    closeOverlay('signupOverlay');
+}
+
+async function doUnsignup() {
+    const myName = (localStorage.getItem('myName') || '').trim().toLowerCase();
+    if (!myName) return;
+    const s  = slots.find(x => x.id === currentSlotId);
+    const me = (s.inscripciones || []).find(e => e.nombre.trim().toLowerCase() === myName);
+    if (!me) return;
+
+    const { error } = await sb.from('inscripciones').delete().eq('id', me.id);
+    if (error) { alert('Error: ' + error.message); return; }
+
+    await loadWeek();
+    closeOverlay('signupOverlay');
+}
+
+// ── WhatsApp notification ─────────────────────────
+function notifyWhatsApp(name, slot) {
+    if (!CONFIG.callmebotPhone || CONFIG.callmebotPhone === 'TU_NUMERO') return;
+
+    const msg = `🏊 *${CONFIG.nombreAsociacion}*\n`
+              + `${name} s'ha apuntat a ${slot.actividad}\n`
+              + `📅 ${fmtDate(slot.fecha)}\n`
+              + `⏰ ${slot.hora_inicio.slice(0,5)}–${slot.hora_fin.slice(0,5)}`;
+
+    const url = `https://api.callmebot.com/whatsapp.php`
+              + `?phone=${CONFIG.callmebotPhone}`
+              + `&text=${encodeURIComponent(msg)}`
+              + `&apikey=${CONFIG.callmebotApiKey}`;
+
+    fetch(url, { mode: 'no-cors' }).catch(() => {});
+}
+
+// ── Admin ─────────────────────────────────────────
+function openAdmin() {
+    document.getElementById('adminLogin').style.display = 'block';
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('adminPwd').value = '';
+    document.getElementById('adminLoginErr').textContent = '';
+    document.getElementById('adminOverlay').classList.add('open');
+}
+
+function checkAdminPwd() {
+    if (document.getElementById('adminPwd').value === CONFIG.adminPassword) {
+        document.getElementById('adminLogin').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+    } else {
+        document.getElementById('adminLoginErr').textContent = 'Contrasenya incorrecta';
+    }
+}
+
+async function createSlots() {
+    const from     = document.getElementById('aDateFrom').value;
+    const to       = document.getElementById('aDateTo').value;
+    const tFrom    = document.getElementById('aTimeFrom').value;
+    const tTo      = document.getElementById('aTimeTo').value;
+    const activity = document.getElementById('aActivity').value || CONFIG.actividadDefault;
+    const cap      = parseInt(document.getElementById('aCapacity').value) || 8;
+    const noSun    = document.getElementById('aNoSunday').checked;
+
+    if (!from || !to || !tFrom || !tTo) {
+        showAlert('adminAlert','Omple tots els camps','error'); return;
+    }
+
+    const btn = document.getElementById('createBtn');
+    btn.disabled = true; btn.textContent = 'Creant…';
+
+    const rows = [];
+    const cur  = new Date(from + 'T00:00:00');
+    const end  = new Date(to   + 'T00:00:00');
+
+    while (cur <= end) {
+        if (!(noSun && cur.getDay() === 0)) {
+            const [fh, fm] = tFrom.split(':').map(Number);
+            const [th, tm] = tTo.split(':').map(Number);
+            let h = fh, m = fm;
+            while (h * 60 + m < th * 60 + tm) {
+                const nm = m + 30;
+                const nh = h + Math.floor(nm / 60);
+                const rm = nm % 60;
+                rows.push({
+                    actividad:   activity,
+                    fecha:       iso(cur),
+                    hora_inicio: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`,
+                    hora_fin:    `${String(nh).padStart(2,'0')}:${String(rm).padStart(2,'0')}`,
+                    plazas_max:  cap
+                });
+                h = nh; m = rm;
+            }
+        }
+        cur.setDate(cur.getDate() + 1);
+    }
+
+    if (!rows.length) {
+        showAlert('adminAlert','No s\'han generat franges (comprova les dates)','error');
+        btn.disabled = false; btn.textContent = 'Crear franges';
+        return;
+    }
+
+    const { error } = await sb.from('franjas').insert(rows);
+    if (error) {
+        showAlert('adminAlert','Error: ' + error.message,'error');
+    } else {
+        showAlert('adminAlert',`✓ ${rows.length} franges creades correctament`,'success');
+        await loadWeek();
+    }
+    btn.disabled = false; btn.textContent = 'Crear franges';
+}
+
+async function deleteWeekSlots() {
+    if (!confirm('Eliminar totes les franges d\'aquesta setmana i les seves inscripcions?')) return;
+
+    const mon = getMonday(new Date());
+    mon.setDate(mon.getDate() + weekOffset * 7);
+    const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+
+    const { error } = await sb.from('franjas').delete()
+        .gte('fecha', iso(mon)).lte('fecha', iso(sun));
+
+    if (error) { showAlert('adminAlert','Error: ' + error.message,'error'); }
+    else        { showAlert('adminAlert','✓ Franges eliminades','success'); await loadWeek(); }
+}
+
+// ── Utils ─────────────────────────────────────────
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+
+function showAlert(containerId, msg, type) {
+    document.getElementById(containerId).innerHTML =
+        `<div class="alert alert-${type}">${msg}</div>`;
+}
+
+document.querySelectorAll('.overlay').forEach(o =>
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); })
+);
+</script>
+</body>
+</html>

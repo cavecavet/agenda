@@ -1,0 +1,20 @@
+# GitHub Pages configuration for Agenda Comunitaria
+# This site serves two separate applications from subdirectories:
+# - /swimming/ — Natació agenda
+# - /association/ — Cave Cavet association agenda
+
+theme: null  # No theme, using custom HTML
+exclude:
+  - .github
+  - SETUP.md
+  - supabase_setup.sql
+  - README.md
+  - node_modules
+  - vendor
+  - package-lock.json
+
+# Allow HTML files in pages
+markdown_ext: markdown,mkdown,mkdn,mkd,md
+
+# Disable Jekyll processing if desired (optional)
+# safe: true
