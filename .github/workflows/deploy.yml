@@ -25,6 +25,20 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
+      - name: Inject credentials
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          CALLMEBOT_PHONE: ${{ secrets.CALLMEBOT_PHONE }}
+          CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          sed -i "s|TU_SUPABASE_URL|$SUPABASE_URL|g" association/index.html
+          sed -i "s|TU_SUPABASE_ANON_KEY|$SUPABASE_KEY|g" association/index.html
+          sed -i "s|TU_NUMERO|$CALLMEBOT_PHONE|g" association/index.html
+          sed -i "s|TU_APIKEY_CALLMEBOT|$CALLMEBOT_API_KEY|g" association/index.html
+          sed -i "s|cambia_esta_clave|$ADMIN_PASSWORD|g" association/index.html
+
       - name: Upload artifacts
         uses: actions/upload-pages-artifact@v3
         with:
