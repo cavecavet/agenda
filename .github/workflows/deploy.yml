@@ -33,11 +33,16 @@ jobs:
           CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
         run: |
-          sed -i "s|TU_SUPABASE_URL|$SUPABASE_URL|g" association/index.html
-          sed -i "s|TU_SUPABASE_ANON_KEY|$SUPABASE_KEY|g" association/index.html
-          sed -i "s|TU_NUMERO|$CALLMEBOT_PHONE|g" association/index.html
-          sed -i "s|TU_APIKEY_CALLMEBOT|$CALLMEBOT_API_KEY|g" association/index.html
-          sed -i "s|cambia_esta_clave|$ADMIN_PASSWORD|g" association/index.html
+          CLEAN_URL=$(echo -n "$SUPABASE_URL" | tr -d '\n\r')
+          CLEAN_KEY=$(echo -n "$SUPABASE_KEY" | tr -d '\n\r')
+          CLEAN_PHONE=$(echo -n "$CALLMEBOT_PHONE" | tr -d '\n\r')
+          CLEAN_APIKEY=$(echo -n "$CALLMEBOT_API_KEY" | tr -d '\n\r')
+          CLEAN_PWD=$(echo -n "$ADMIN_PASSWORD" | tr -d '\n\r')
+          sed -i "s|TU_SUPABASE_URL|$CLEAN_URL|g" association/index.html
+          sed -i "s|TU_SUPABASE_ANON_KEY|$CLEAN_KEY|g" association/index.html
+          sed -i "s|TU_NUMERO|$CLEAN_PHONE|g" association/index.html
+          sed -i "s|TU_APIKEY_CALLMEBOT|$CLEAN_APIKEY|g" association/index.html
+          sed -i "s|cambia_esta_clave|$CLEAN_PWD|g" association/index.html
           echo "--- Verificació ---"
           grep -q "TU_SUPABASE_URL" association/index.html && echo "ERROR: SUPABASE_URL no substituïda" || echo "OK: SUPABASE_URL substituïda"
           grep -q "TU_SUPABASE_ANON_KEY" association/index.html && echo "ERROR: SUPABASE_KEY no substituïda" || echo "OK: SUPABASE_KEY substituïda"
