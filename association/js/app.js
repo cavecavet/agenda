@@ -103,10 +103,10 @@ async function loadWeek() {
             .order('fecha')
             .order('hora_inicio'),
         sb.from('notes_dia')
-            .select('fecha, nota')
+            .select('fecha_inicio, fecha_fin, nota')
             .eq('tipo_agenda', CONFIG.tipoAgenda)
-            .gte('fecha', iso(mon))
-            .lte('fecha', iso(sun))
+            .lte('fecha_inicio', iso(sun))
+            .gte('fecha_fin',    iso(mon))
     ]);
 
     if (franjesRes.error) {
@@ -118,7 +118,19 @@ async function loadWeek() {
 
     slots = franjesRes.data || [];
     notesMap = {};
-    (notesRes.data || []).forEach(n => { notesMap[n.fecha] = n.nota; });
+    // Cada entrada de notes cobreix un rang de dates; la mapem a cada dia visible
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(mon); d.setDate(d.getDate() + i);
+        weekDates.push(iso(d));
+    }
+    (notesRes.data || []).forEach(n => {
+        weekDates.forEach(ds => {
+            if (ds >= n.fecha_inicio && ds <= n.fecha_fin) {
+                notesMap[ds] = { nota: n.nota, fecha_inicio: n.fecha_inicio, fecha_fin: n.fecha_fin };
+            }
+        });
+    });
     renderWeek(mon);
 }
 
@@ -171,7 +183,7 @@ function renderWeek(mon) {
         if (!daySlots) continue;
 
         const isToday = ds === today;
-        const nota    = notesMap[ds] || '';
+        const nota    = notesMap[ds]?.nota || '';
         const { mati, tarda } = splitShifts(daySlots);
         const twoShifts = tarda.length > 0;
 
@@ -241,17 +253,25 @@ function switchShift(btn, fecha, shift) {
 
 async function saveNote(fecha, text) {
     if (!adminActiu) return;
-    if (text === (notesMap[fecha] || '')) return; // sense canvis
-    const nota = text;
+    const entry = notesMap[fecha];
+    if (text === (entry ? entry.nota : '')) return; // sense canvis
+
+    const fecha_inicio = entry ? entry.fecha_inicio : fecha;
+    const fecha_fin    = entry ? entry.fecha_fin    : fecha;
+
     const { error } = await sb.from('notes_dia').upsert(
-        { tipo_agenda: CONFIG.tipoAgenda, fecha, nota },
-        { onConflict: 'tipo_agenda,fecha' }
+        { tipo_agenda: CONFIG.tipoAgenda, fecha_inicio, fecha_fin, nota: text },
+        { onConflict: 'tipo_agenda,fecha_inicio' }
     );
-    if (error) {
-        alert('Error desant la nota: ' + error.message);
-        return;
-    }
-    notesMap[fecha] = nota;
+    if (error) { alert('Error desant la nota: ' + error.message); return; }
+
+    // Actualitza tots els dies del rang al cache local
+    Object.keys(notesMap).forEach(ds => {
+        if (notesMap[ds]?.fecha_inicio === fecha_inicio) {
+            notesMap[ds] = { nota: text, fecha_inicio, fecha_fin };
+        }
+    });
+    if (!entry) notesMap[fecha] = { nota: text, fecha_inicio, fecha_fin };
 }
 
 // ── Modal torn sencer ─────────────────────────────
@@ -549,6 +569,13 @@ async function createSlots() {
     if (error) {
         showAlert('adminAlert','Error: ' + error.message,'error');
     } else {
+        // Crea entrada de nota per al rang d'aquest event (si no n'hi ha cap)
+        await sb.from('notes_dia').insert({
+            tipo_agenda: CONFIG.tipoAgenda,
+            fecha_inicio: from,
+            fecha_fin:    to,
+            nota: ''
+        }); // ignorem l'error si ja existeix (clau duplicada)
         showAlert('adminAlert',`✓ ${rows.length} franges creades correctament`,'success');
         await loadWeek();
     }

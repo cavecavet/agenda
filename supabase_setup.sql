@@ -65,16 +65,20 @@ CREATE POLICY "inscripciones_delete" ON inscripciones
 -- ══════════════════════════════════════════════════════════
 
 -- ══════════════════════════════════════════════════════════
--- Notes per dia (descripcions d'event editables per l'admin)
+-- Notes per event (descripció per rang de dates de l'event)
+-- Executa DROP + CREATE si ja tenies la versió antiga (per data)
 -- ══════════════════════════════════════════════════════════
 
-CREATE TABLE IF NOT EXISTS notes_dia (
-    id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-    tipo_agenda text        NOT NULL,
-    fecha       date        NOT NULL,
-    nota        text        NOT NULL DEFAULT '',
-    created_at  timestamptz DEFAULT now(),
-    UNIQUE(tipo_agenda, fecha)
+DROP TABLE IF EXISTS notes_dia;
+
+CREATE TABLE notes_dia (
+    id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo_agenda  text        NOT NULL,
+    fecha_inicio date        NOT NULL,
+    fecha_fin    date        NOT NULL,
+    nota         text        NOT NULL DEFAULT '',
+    created_at   timestamptz DEFAULT now(),
+    UNIQUE(tipo_agenda, fecha_inicio)
 );
 
 ALTER TABLE notes_dia ENABLE ROW LEVEL SECURITY;
