@@ -75,23 +75,31 @@ async function loadWeek() {
 
     document.getElementById('mainContent').innerHTML = '<div class="loading">Carregant franges…</div>';
 
-    const { data, error } = await sb
-        .from('franjas')
-        .select('*, inscripciones(id, nombre, created_at)')
-        .eq('tipo_agenda', CONFIG.tipoAgenda)
-        .gte('fecha', iso(mon))
-        .lte('fecha', iso(sun))
-        .order('fecha')
-        .order('hora_inicio');
+    const [franjesRes, notesRes] = await Promise.all([
+        sb.from('franjas')
+            .select('*, inscripciones(id, nombre, created_at)')
+            .eq('tipo_agenda', CONFIG.tipoAgenda)
+            .gte('fecha', iso(mon))
+            .lte('fecha', iso(sun))
+            .order('fecha')
+            .order('hora_inicio'),
+        sb.from('notes_dia')
+            .select('fecha, nota')
+            .eq('tipo_agenda', CONFIG.tipoAgenda)
+            .gte('fecha', iso(mon))
+            .lte('fecha', iso(sun))
+    ]);
 
-    if (error) {
+    if (franjesRes.error) {
         document.getElementById('mainContent').innerHTML = `
-            <div class="config-warn">Error carregant dades: ${error.message}<br>
+            <div class="config-warn">Error carregant dades: ${franjesRes.error.message}<br>
             Comprova la configuració de Supabase i les polítiques RLS.</div>`;
         return;
     }
 
-    slots = data || [];
+    slots = franjesRes.data || [];
+    notesMap = {};
+    (notesRes.data || []).forEach(n => { notesMap[n.fecha] = n.nota; });
     renderWeek(mon);
 }
 

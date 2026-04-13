@@ -63,3 +63,23 @@ CREATE POLICY "inscripciones_delete" ON inscripciones
 -- ══════════════════════════════════════════════════════════
 -- Ja pots tancar el SQL Editor. La base de dades està llesta.
 -- ══════════════════════════════════════════════════════════
+
+-- ══════════════════════════════════════════════════════════
+-- Notes per dia (descripcions d'event editables per l'admin)
+-- ══════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS notes_dia (
+    id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+    tipo_agenda text        NOT NULL,
+    fecha       date        NOT NULL,
+    nota        text        NOT NULL DEFAULT '',
+    created_at  timestamptz DEFAULT now(),
+    UNIQUE(tipo_agenda, fecha)
+);
+
+ALTER TABLE notes_dia ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "notes_dia_select" ON notes_dia FOR SELECT USING (true);
+CREATE POLICY "notes_dia_insert" ON notes_dia FOR INSERT WITH CHECK (true);
+CREATE POLICY "notes_dia_update" ON notes_dia FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "notes_dia_delete" ON notes_dia FOR DELETE USING (true);
