@@ -56,7 +56,7 @@ header {
     position: relative;
     overflow: hidden;
 }
-.header-logo  { height: 32px; width: auto; filter: brightness(0) invert(1); display: block; }
+.header-logo  { height: 38px; width: auto; filter: brightness(0) invert(1); display: block; }
 .header-sub   { font-size: 0.72rem; opacity: 0.8; margin-top: 0.25rem; font-style: normal; letter-spacing: normal; color: white; }
 .header-badge {
     background: rgba(255,255,255,0.18);
