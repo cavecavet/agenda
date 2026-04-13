@@ -133,7 +133,7 @@ function splitShifts(daySlots) {
     for (let i = 1; i < daySlots.length; i++) {
         const endPrev  = timeToMins(daySlots[i-1].hora_fin);
         const startCur = timeToMins(daySlots[i].hora_inicio);
-        if (startCur - endPrev > 60) {
+        if (startCur - endPrev >= 60) {
             return { mati: daySlots.slice(0, i), tarda: daySlots.slice(i) };
         }
     }
@@ -211,9 +211,11 @@ function renderWeek(mon) {
 
 function renderShiftGrid(shiftSlots, fecha, shiftName, visible) {
     const myName = (localStorage.getItem('myName') || '').trim().toLowerCase();
-    const allFull = shiftSlots.every(s => {
+    const allFull = !shiftSlots.some(s => {
         const ins = s.inscripciones || [];
-        return ins.length >= s.plazas_max && !ins.some(e => e.nombre.trim().toLowerCase() === myName);
+        const full     = ins.length >= s.plazas_max;
+        const enrolled = myName && ins.some(e => e.nombre.trim().toLowerCase() === myName);
+        return !full && !enrolled;
     });
     const label = shiftName === 'mati' ? 'matí' : 'tarda';
 
