@@ -637,7 +637,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const now = new Date();
     document.getElementById('headerBadge').textContent = `${M[now.getMonth()]} ${now.getFullYear()}`;
 
-    if (CONFIG.supabaseUrl === 'TU_SUPABASE_URL') {
+    if (CONFIG.supabaseUrl.startsWith('TU_')) {
         document.getElementById('mainContent').innerHTML = `
             <div class="config-warn">
                 <strong>🌊 Aplicació no configurada</strong><br><br>
