@@ -44,7 +44,9 @@ function getMonday(d) {
     r.setHours(0,0,0,0);
     return r;
 }
-function iso(d) { return d.toISOString().split('T')[0]; }
+function iso(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 
 function fmtDate(str) {
     const D = ['diumenge','dilluns','dimarts','dimecres','dijous','divendres','dissabte'];
@@ -284,8 +286,13 @@ function openAdmin() {
     document.getElementById('adminOverlay').classList.add('open');
 }
 
-function checkAdminPwd() {
-    if (document.getElementById('adminPwd').value === CONFIG.adminPassword) {
+async function checkAdminPwd() {
+    const input = document.getElementById('adminPwd').value;
+    const encoded = new TextEncoder().encode(input);
+    const hashBuf = await crypto.subtle.digest('SHA-256', encoded);
+    const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+
+    if (hashHex === CONFIG.adminPasswordHash) {
         document.getElementById('adminLogin').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
     } else {

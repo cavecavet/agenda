@@ -41,7 +41,7 @@ jobs:
           echo "--- Verificació ---"
           grep -q "TU_SUPABASE_URL" association/index.html && echo "ERROR: SUPABASE_URL no substituïda" || echo "OK: SUPABASE_URL substituïda"
           grep -q "TU_SUPABASE_ANON_KEY" association/index.html && echo "ERROR: SUPABASE_KEY no substituïda" || echo "OK: SUPABASE_KEY substituïda"
-          grep -q "cambia_esta_clave" association/index.html && echo "ERROR: ADMIN_PASSWORD no substituïda" || echo "OK: ADMIN_PASSWORD substituïda"
+          grep -q "cambia_esta_clave" association/index.html && echo "ERROR: ADMIN_PASSWORD_HASH no substituïda" || echo "OK: ADMIN_PASSWORD_HASH substituïda"
           echo "--- Debug supabaseUrl ---"
           grep "supabaseUrl" association/index.html | head -1
 
