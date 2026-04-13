@@ -17,7 +17,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         body::before {
             content: '';
             position: fixed;
@@ -25,13 +25,13 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
                 radial-gradient(circle at 80% 80%, rgba(255,107,107,0.05) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
-        
+
         .container {
             background: white;
             border-radius: 20px;
@@ -43,25 +43,13 @@
             position: relative;
             border: 2px solid rgba(0, 180, 216, 0.1);
         }
-        00b4d8 0%, #0096c7 50%, #06a77d 100%);
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(0, 101, 128, 0.2);
-        }
-        
-        .link-back:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 101, 128, 0.3)
+
         p {
             color: #666;
             line-height: 1.6;
             margin-bottom: 1.5rem;
         }
-        
+
         .link-back {
             display: inline-block;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -72,20 +60,19 @@
             font-weight: 500;
             transition: opacity 0.2s;
         }
-        
+
         .link-back:hover {
             opacity: 0.9;
         }
     </style>
 </head>
 <body>
+    <div class="container">
         <div class="icon">🐙</div>
         <h1>Natació</h1>
         <p><strong>🌊 Aquesta agenda està desactivada per ara.</strong></p>
-    <p><strong>Aquesta agenda està desactivada per ara.</strong></p>
-    <p>Si necessites accedir a les activitats, ves a l'agenda principal d'associació.</p>
-    <a href="/agenda/" class="link-back">← Tornar a l'inici</a>
-</div>
-
+        <p>Si necessites accedir a les activitats, ves a l'agenda principal d'associació.</p>
+        <a href="/agenda/" class="link-back">← Tornar a l'inici</a>
+    </div>
 </body>
 </html>
