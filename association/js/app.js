@@ -212,6 +212,21 @@ function switchShift(btn, fecha, shift) {
     });
 }
 
+async function saveNote(fecha, text) {
+    if (!adminActiu) return;
+    if (text === (notesMap[fecha] || '')) return; // sense canvis
+    const nota = text;
+    const { error } = await sb.from('notes_dia').upsert(
+        { tipo_agenda: CONFIG.tipoAgenda, fecha, nota },
+        { onConflict: 'tipo_agenda,fecha' }
+    );
+    if (error) {
+        alert('Error desant la nota: ' + error.message);
+        return;
+    }
+    notesMap[fecha] = nota;
+}
+
 function fmtDuration(ini, fi) {
     const [h1, m1] = ini.split(':').map(Number);
     const [h2, m2] = fi.split(':').map(Number);
