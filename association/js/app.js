@@ -1,8 +1,10 @@
 // ── Estado ──────────────────────────────────────
-let sb;           // supabase client
+let sb;               // supabase client
 let weekOffset = 0;
 let slots = [];
+let notesMap = {};    // { fecha: nota } per la setmana visible
 let currentSlotId = null;
+let adminActiu = false;
 
 // ── Init ─────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -239,7 +241,7 @@ async function doSignup() {
     }
 
     localStorage.setItem('myName', name);
-    notifyWhatsApp(name, s);
+    // notifyWhatsApp(name, s);  // desactivat temporalment
 
     await loadWeek();
     closeOverlay('signupOverlay');
@@ -278,6 +280,7 @@ function notifyWhatsApp(name, slot) {
 
 // ── Admin ─────────────────────────────────────────
 function openAdmin() {
+    adminActiu = false;
     document.getElementById('adminLogin').style.display = 'block';
     document.getElementById('adminPanel').style.display = 'none';
     document.getElementById('adminPwd').value = '';
@@ -292,8 +295,10 @@ async function checkAdminPwd() {
     const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
 
     if (hashHex === CONFIG.adminPasswordHash) {
+        adminActiu = true;
         document.getElementById('adminLogin').style.display = 'none';
         document.getElementById('adminPanel').style.display = 'block';
+        renderWeek(getMonday(new Date()));
     } else {
         document.getElementById('adminLoginErr').textContent = 'Contrasenya incorrecta';
     }
