@@ -25,32 +25,35 @@ Sistema de gestión de agendas simples para comunidades, asociaciones, y grupos 
 #    - Anon key (public)
 ```
 
-### 2. Configurar credenciales
-Edita los archivos de configuración:
-- `swimming/index.html` → CONFIG
-- `association/index.html` → CONFIG
+### 2. Configurar credenciales (GitHub Secrets)
+Las credenciales se inyectan via GitHub Actions, nunca se editan en el código fuente.
 
+Ve a **Settings → Secrets and variables → Actions** y añade:
+
+| Secret | Valor |
+|--------|-------|
+| `SUPABASE_URL` | Project URL de Supabase |
+| `SUPABASE_KEY` | Anon public key de Supabase |
+| `CALLMEBOT_PHONE` | Número con prefijo país (ej. `34612345678`) |
+| `CALLMEBOT_API_KEY` | API Key de CallMeBot |
+| `ADMIN_PASSWORD` | Hash SHA-256 de tu contraseña admin |
+
+Para generar el hash SHA-256 de la contraseña admin, ejecuta en la consola del navegador:
 ```javascript
-const CONFIG = {
-    supabaseUrl:  'https://your-project.supabase.co',
-    supabaseKey:  'your-anon-key',
-    callmebotPhone:  '34612345678',  // opcional
-    callmebotApiKey: 'your-api-key', // opcional
-    nombreAsociacion: 'Mi Asociación',
-    actividadDefault: 'Actividad 🎉',
-    tipoAgenda: 'asociacion',  // NO CAMBIAR
-    adminPassword: 'tu-contraseña-admin',
-};
+crypto.subtle.digest('SHA-256', new TextEncoder().encode('tu-contraseña'))
+  .then(b => console.log(Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2,'0')).join('')))
 ```
 
 ### 3. Publicar en GitHub Pages
+1. Ve a **Settings → Pages** y selecciona **GitHub Actions** como source.
+2. Añade los secrets (paso anterior).
+3. Haz push:
 ```bash
 git push origin main
 ```
 
-GitHub Actions desplegará automáticamente. Accede a:
+GitHub Actions inyectará las credenciales y desplegará automáticamente. Accede a:
 - `https://your-username.github.io/agenda/`
-- `https://your-username.github.io/agenda/swimming/`
 - `https://your-username.github.io/agenda/association/`
 
 ## 📋 Estructura del proyecto
@@ -58,15 +61,16 @@ GitHub Actions desplegará automáticamente. Accede a:
 ```
 agenda/
 ├── index.html                      # Página principal (galería de agendas)
-├── swimming/index.html             # Agenda de natación
-├── association/index.html          # Agenda de asociación
-├── index-old.html                  # Versión anterior de backup
+├── association/
+│   ├── index.html                  # HTML + CONFIG (placeholders para secrets)
+│   ├── css/style.css               # Estilos
+│   └── js/app.js                   # Lógica JS
 ├── SETUP.md                        # Guía de configuración e instalación
 ├── supabase_setup.sql              # Script de inicialización de DB
 ├── _config.yml                     # Configuración de GitHub Pages
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml              # Workflow automático de despliegue
+│       └── deploy.yml              # Inyecta secrets y despliega
 └── README.md                       # Este archivo
 ```
 
@@ -115,10 +119,13 @@ Cada agenda se filtra automáticamente por su `tipo_agenda`:
 
 ## 🔐 Seguridad
 
-- Las RLS policies de Supabase son públicas (por confianza comunitaria)
-- El panel admin está protegido por contraseña
-- Los datos se guardan en Supabase (encriptados en tránsito)
+- Las credenciales se inyectan en el despliegue via GitHub Actions Secrets, nunca están en el código fuente
+- La contraseña admin se almacena como hash SHA-256: el texto plano nunca llega al navegador
+- La `supabaseKey` es la "anon public" de Supabase, diseñada para ser pública; la seguridad de los datos depende de las políticas RLS
+- Los datos se guardan en Supabase (cifrados en tránsito)
 - No se almacenan emails ni teléfonos (solo nombres)
+
+**Cambiar la contraseña admin:** genera el nuevo hash SHA-256, actualiza el secret `ADMIN_PASSWORD` en GitHub y haz un push vacío (`git commit --allow-empty -m "chore: rotate admin password" && git push`). Consulta [SETUP.md](SETUP.md) para el proceso completo.
 
 ## 📞 Notificaciones WhatsApp
 
