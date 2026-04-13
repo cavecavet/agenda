@@ -55,12 +55,20 @@
             text-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
         }
 
-        .header-logo {
-            height: 56px;
-            width: auto;
-            filter: brightness(0) invert(1);
-            margin: 0 auto 1rem;
-            display: block;
+        .header-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .header-icon {
+            height: 64px;
+            width: 64px;
+            border-radius: 50%;
+            background: white;
+            padding: 4px;
+            flex-shrink: 0;
         }
         
         .header p {
@@ -218,7 +226,10 @@
 
 <div class="container">
     <div class="header">
-        <img src="images/logo.png" class="header-logo" alt="Associació Cave Cavet">
+        <div class="header-brand">
+            <img src="images/logo2.png" class="header-icon" alt="">
+            <h1>Associació<br>Cave Cavet</h1>
+        </div>
         <p>Explora les activitats de l'associació</p>
     </div>
     

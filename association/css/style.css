@@ -56,8 +56,10 @@ header {
     position: relative;
     overflow: hidden;
 }
-.header-logo  { height: 38px; width: auto; filter: brightness(0) invert(1); display: block; }
-.header-sub   { font-size: 0.72rem; opacity: 0.8; margin-top: 0.25rem; font-style: normal; letter-spacing: normal; color: white; }
+.header-brand { display: flex; align-items: center; gap: 0.65rem; }
+.header-icon  { height: 44px; width: 44px; border-radius: 50%; background: white; padding: 3px; flex-shrink: 0; }
+.header-title { font-size: 1.05rem; font-weight: 800; color: white; letter-spacing: -0.01em; }
+.header-sub   { font-size: 0.72rem; opacity: 0.82; margin-top: 0.1rem; color: white; }
 .header-badge {
     background: rgba(255,255,255,0.18);
     border: 1px solid rgba(255,255,255,0.28);
