@@ -5,6 +5,7 @@ let slots = [];
 let notesMap = {};    // { fecha: nota } per la setmana visible
 let currentSlotId = null;
 let adminActiu = false;
+let tornSlots  = [];   // franges del torn actual obert
 
 // ── Init ─────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -225,6 +226,77 @@ async function saveNote(fecha, text) {
         return;
     }
     notesMap[fecha] = nota;
+}
+
+// ── Modal torn sencer ─────────────────────────────
+function openTornSencer(fecha, shiftName) {
+    const daySlots = slots.filter(s => s.fecha === fecha);
+    const { mati, tarda } = splitShifts(daySlots);
+    tornSlots = shiftName === 'mati' ? mati : tarda;
+
+    const label  = shiftName === 'mati' ? '☀️ Torn de matí sencer' : '🌤 Torn de tarda sencer';
+    document.getElementById('tTitle').textContent = label;
+    document.getElementById('tSub').textContent   = fmtDate(fecha);
+
+    const myName = (localStorage.getItem('myName') || '').trim().toLowerCase();
+    const ul = document.getElementById('tornList');
+    ul.innerHTML = tornSlots.map(s => {
+        const ins      = s.inscripciones || [];
+        const ple      = ins.length >= s.plazas_max;
+        const jaApunt  = myName && ins.some(e => e.nombre.trim().toLowerCase() === myName);
+        const badge    = jaApunt ? ' <span style="color:var(--success);font-weight:700">✓ ja apuntat/ada</span>'
+                       : ple     ? ' <span style="color:var(--danger);font-weight:600">ple</span>'
+                       :           '';
+        return `<li>
+            <div class="avatar">${s.hora_inicio.slice(0,5)}</div>
+            ${s.actividad} · ${ins.length}/${s.plazas_max}${badge}
+        </li>`;
+    }).join('');
+
+    document.getElementById('tornAlert').innerHTML = '';
+    const savedName = localStorage.getItem('myName') || '';
+    document.getElementById('tornNameInput').value = savedName;
+
+    document.getElementById('tornOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('tornNameInput').focus(), 100);
+}
+
+async function doTornSencer() {
+    const name = document.getElementById('tornNameInput').value.trim();
+    if (!name) { showAlert('tornAlert', 'Escriu el teu nom', 'error'); return; }
+
+    const myNameLow = name.toLowerCase();
+    const aInscriure = tornSlots.filter(s => {
+        const ins = s.inscripciones || [];
+        const ple      = ins.length >= s.plazas_max;
+        const jaApunt  = ins.some(e => e.nombre.trim().toLowerCase() === myNameLow);
+        return !ple && !jaApunt;
+    });
+
+    if (!aInscriure.length) {
+        showAlert('tornAlert', 'Ja estàs apuntat/ada a totes les franges disponibles', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('tornBtn');
+    btn.disabled = true; btn.textContent = 'Apuntant…';
+
+    const rows = aInscriure.map(s => ({
+        franja_id:   s.id,
+        tipo_agenda: CONFIG.tipoAgenda,
+        nombre:      name
+    }));
+
+    const { error } = await sb.from('inscripciones').insert(rows);
+    if (error) {
+        showAlert('tornAlert', 'Error: ' + error.message, 'error');
+        btn.disabled = false; btn.textContent = '✓ Apuntar-me a totes';
+        return;
+    }
+
+    localStorage.setItem('myName', name);
+    await loadWeek();
+    closeOverlay('tornOverlay');
 }
 
 function fmtDuration(ini, fi) {
