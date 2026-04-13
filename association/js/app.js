@@ -6,7 +6,6 @@ let currentSlotId = null;
 
 // ── Init ─────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-    document.getElementById('hTitle').textContent = CONFIG.nombreAsociacion;
     const M = ['Gen','Feb','Mar','Abr','Mai','Jun','Jul','Ago','Set','Oct','Nov','Des'];
     const now = new Date();
     document.getElementById('headerBadge').textContent = `${M[now.getMonth()]} ${now.getFullYear()}`;
