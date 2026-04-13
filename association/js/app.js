@@ -103,6 +103,24 @@ async function loadWeek() {
     renderWeek(mon);
 }
 
+// ── Torn matí/tarda ───────────────────────────────
+function timeToMins(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+}
+
+function splitShifts(daySlots) {
+    // Detecta el primer gap >60 min entre franges consecutives
+    for (let i = 1; i < daySlots.length; i++) {
+        const endPrev  = timeToMins(daySlots[i-1].hora_fin);
+        const startCur = timeToMins(daySlots[i].hora_inicio);
+        if (startCur - endPrev > 60) {
+            return { mati: daySlots.slice(0, i), tarda: daySlots.slice(i) };
+        }
+    }
+    return { mati: daySlots, tarda: [] };
+}
+
 function renderWeek(mon) {
     const today = iso(new Date());
     const cont  = document.getElementById('mainContent');
@@ -128,18 +146,70 @@ function renderWeek(mon) {
         if (!daySlots) continue;
 
         const isToday = ds === today;
+        const nota    = notesMap[ds] || '';
+        const { mati, tarda } = splitShifts(daySlots);
+        const twoShifts = tarda.length > 0;
+
+        const notaHtml = (nota || adminActiu)
+            ? `<div class="day-note ${adminActiu ? 'editable' : ''}"
+                    data-fecha="${ds}"
+                    contenteditable="${adminActiu ? 'true' : 'false'}"
+                    data-placeholder="Afegeix una descripció de l'event..."
+                    onblur="saveNote('${ds}', this.textContent.trim())"
+               >${nota}</div>`
+            : '';
+
+        const shiftBtns = twoShifts
+            ? `<div class="shift-tabs">
+                 <button class="shift-tab active" onclick="switchShift(this,'${ds}','mati')">☀️ Matí (${mati.length})</button>
+                 <button class="shift-tab"        onclick="switchShift(this,'${ds}','tarda')">🌤 Tarda (${tarda.length})</button>
+               </div>`
+            : '';
+
+        const matiGrid  = renderShiftGrid(mati,  ds, 'mati',  true);
+        const tardaGrid = twoShifts ? renderShiftGrid(tarda, ds, 'tarda', false) : '';
+
         html += `
         <div class="day-section">
             <div class="day-header ${isToday ? 'today' : ''}">
                 <span>${fmtDate(ds)}</span>
                 ${isToday ? '<span class="today-pill">Avui</span>' : ''}
             </div>
-            <div class="slots-grid">
-                ${daySlots.map(slotCard).join('')}
-            </div>
+            ${notaHtml}
+            ${shiftBtns}
+            ${matiGrid}
+            ${tardaGrid}
         </div>`;
     }
     cont.innerHTML = html;
+}
+
+function renderShiftGrid(shiftSlots, fecha, shiftName, visible) {
+    const myName = (localStorage.getItem('myName') || '').trim().toLowerCase();
+    const allFull = shiftSlots.every(s => {
+        const ins = s.inscripciones || [];
+        return ins.length >= s.plazas_max && !ins.some(e => e.nombre.trim().toLowerCase() === myName);
+    });
+    const label = shiftName === 'mati' ? 'matí' : 'tarda';
+
+    return `<div class="slots-grid" data-fecha="${fecha}" data-shift="${shiftName}" ${visible ? '' : 'style="display:none"'}>
+        ${shiftSlots.map(slotCard).join('')}
+        <button class="btn-torn-sencer" ${allFull ? 'disabled' : ''}
+                onclick="openTornSencer('${fecha}','${shiftName}')">
+            + Torn sencer de ${label}
+        </button>
+    </div>`;
+}
+
+function switchShift(btn, fecha, shift) {
+    // Actualitza les pestanyes actives
+    const section = btn.closest('.day-section');
+    section.querySelectorAll('.shift-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Mostra/amaga els grids
+    section.querySelectorAll('.slots-grid').forEach(g => {
+        g.style.display = g.dataset.shift === shift ? '' : 'none';
+    });
 }
 
 function fmtDuration(ini, fi) {

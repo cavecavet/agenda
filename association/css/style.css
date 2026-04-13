@@ -436,3 +436,68 @@ hr.divider { border: none; border-top: 1px solid var(--gray-200); margin: 1rem 0
     display: flex; align-items: center; gap: 0.4rem;
     font-size: 0.85rem; cursor: pointer; color: var(--gray-700);
 }
+
+/* ---- SHIFT TABS ---- */
+.shift-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--gray-100);
+    background: white;
+}
+.shift-tab {
+    flex: 1;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--gray-400);
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s, border-color 0.15s;
+}
+.shift-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* ---- DAY NOTE ---- */
+.day-note {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.78rem;
+    color: var(--gray-600);
+    font-style: italic;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-100);
+    min-height: 1.6rem;
+}
+.day-note.editable {
+    cursor: text;
+    outline: none;
+    background: #fffbeb;
+    border-bottom-color: #fbbf24;
+}
+.day-note.editable:empty::before {
+    content: attr(data-placeholder);
+    color: var(--gray-300);
+    font-style: italic;
+    pointer-events: none;
+}
+
+/* ---- BOTÓ TORN SENCER ---- */
+.btn-torn-sencer {
+    width: 100%;
+    background: var(--gray-50);
+    border: 1.5px dashed var(--primary);
+    border-radius: 8px;
+    padding: 0.45rem;
+    font-size: 0.78rem;
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 0.1rem;
+    transition: background 0.15s;
+}
+.btn-torn-sencer:hover:not(:disabled) { background: var(--gray-100); }
+.btn-torn-sencer:disabled { opacity: 0.4; cursor: default; border-style: solid; }
