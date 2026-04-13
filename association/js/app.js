@@ -6,6 +6,7 @@ let notesMap = {};    // { fecha: nota } per la setmana visible
 let currentSlotId = null;
 let adminActiu = false;
 let tornSlots  = [];   // franges del torn actual obert
+let noFutureSlots = false;
 
 // ── Init ─────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -35,6 +36,23 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('aDateTo').value   = iso(sun);
     document.getElementById('aActivity').value = CONFIG.actividadDefault;
 
+    // Navegar a la primera setmana amb franges futures
+    const today = iso(new Date());
+    const { data: properes } = await sb
+        .from('franjas')
+        .select('fecha')
+        .eq('tipo_agenda', CONFIG.tipoAgenda)
+        .gte('fecha', today)
+        .order('fecha')
+        .limit(1);
+
+    noFutureSlots = !(properes && properes.length);
+    if (properes && properes.length) {
+        const firstDate = new Date(properes[0].fecha + 'T00:00:00');
+        const firstMon  = getMonday(firstDate);
+        const currMon   = getMonday(new Date());
+        weekOffset = Math.round((firstMon - currMon) / (7 * 24 * 3600 * 1000));
+    }
     await loadWeek();
 });
 
@@ -62,7 +80,7 @@ function fmtDateShort(str) {
     return `${d.getDate()} ${M[d.getMonth()]}`;
 }
 
-function changeWeek(delta) { weekOffset += delta; loadWeek(); }
+function changeWeek(delta) { noFutureSlots = false; weekOffset += delta; loadWeek(); }
 
 async function loadWeek() {
     const mon = getMonday(new Date());
@@ -127,11 +145,17 @@ function renderWeek(mon) {
     const cont  = document.getElementById('mainContent');
 
     if (!slots.length) {
+        const msg = noFutureSlots
+            ? 'No hi ha activitats pròximes'
+            : 'No hi ha franges aquesta setmana';
+        const sub = noFutureSlots
+            ? ''
+            : '<div>Usa el panell Admin per crear les franges horàries</div>';
         cont.innerHTML = `
             <div class="empty-state">
                 <div class="icon">🪸</div>
-                <div style="font-weight:600;margin-bottom:0.25rem">No hi ha franges aquesta setmana</div>
-                <div>Usa el panell Admin per crear les franges horàries</div>
+                <div style="font-weight:600;margin-bottom:0.25rem">${msg}</div>
+                ${sub}
             </div>`;
         return;
     }
@@ -489,13 +513,14 @@ async function createSlots() {
     const cur  = new Date(from + 'T00:00:00');
     const end  = new Date(to   + 'T00:00:00');
 
+    const durMin = parseInt(document.querySelector('input[name="aDuration"]:checked').value);
     while (cur <= end) {
         if (!(noSun && cur.getDay() === 0)) {
             const [fh, fm] = tFrom.split(':').map(Number);
             const [th, tm] = tTo.split(':').map(Number);
             let h = fh, m = fm;
             while (h * 60 + m < th * 60 + tm) {
-                const nm = m + 30;
+                const nm = m + durMin;
                 const nh = h + Math.floor(nm / 60);
                 const rm = nm % 60;
                 rows.push({
