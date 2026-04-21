@@ -401,7 +401,13 @@ function openSlot(id) {
     // Llista apuntats
     const ul = document.getElementById('enrolledList');
     ul.innerHTML = ins.length
-        ? ins.map(e => `<li><div class="avatar">${e.nombre.charAt(0).toUpperCase()}</div>${e.nombre}</li>`).join('')
+        ? ins.map(e => `<li>
+            <div class="avatar">${e.nombre.charAt(0).toUpperCase()}</div>
+            ${e.nombre}
+            ${adminActiu ? `<button onclick="adminRemoveInscripcion('${e.id}')"
+                style="margin-left:auto;background:none;border:none;color:var(--danger);font-size:1rem;cursor:pointer;padding:0 0.25rem;line-height:1"
+                title="Eliminar inscripció">✕</button>` : ''}
+          </li>`).join('')
         : '<li style="color:var(--gray-400)">Ningú apuntat encara</li>';
 
     // Estat usuari
@@ -470,6 +476,13 @@ async function doUnsignup() {
 
     await loadWeek();
     closeOverlay('signupOverlay');
+}
+
+async function adminRemoveInscripcion(inscripcionId) {
+    const { error } = await sb.from('inscripciones').delete().eq('id', inscripcionId);
+    if (error) { alert('Error eliminant la inscripció: ' + error.message); return; }
+    await loadWeek();
+    openSlot(currentSlotId);
 }
 
 // ── WhatsApp notification ─────────────────────────
