@@ -222,21 +222,8 @@ function renderWeek(mon) {
 }
 
 function renderShiftGrid(shiftSlots, fecha, shiftName, visible) {
-    const myName = (localStorage.getItem('myName') || '').trim().toLowerCase();
-    const allFull = !shiftSlots.some(s => {
-        const ins = s.inscripciones || [];
-        const full     = ins.length >= s.plazas_max;
-        const enrolled = myName && ins.some(e => e.nombre.trim().toLowerCase() === myName);
-        return !full && !enrolled;
-    });
-    const label = shiftName === 'mati' ? 'matí' : 'tarda';
-
     return `<div class="slots-grid" data-fecha="${fecha}" data-shift="${shiftName}" ${visible ? '' : 'style="display:none"'}>
         ${shiftSlots.map(slotCard).join('')}
-        <button class="btn-torn-sencer" ${allFull ? 'disabled' : ''}
-                onclick="openTornSencer('${fecha}','${shiftName}')">
-            + Torn sencer de ${label}
-        </button>
     </div>`;
 }
 
